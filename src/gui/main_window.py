@@ -408,7 +408,7 @@ class CyberScannerPRO:
                 font=("Segoe UI", 9), bg=self.get_theme_color('bg'), fg=self.get_theme_color('text_secondary')).pack(side="left", padx=(0, 10))
         
         self.speed_var = tk.StringVar(value="Normal")
-        speed_options = ["Rapide (0.1s)", "Normal (0.5s)", "Lent (1.0s)", "Très lent (2.0s)"]
+        speed_options = ["Rapide (0.1s)", "Normal (0.5s)", "Lent (1.0s)", "Très Lent (2.0s)"]
         speed_combo = ttk.Combobox(speed_frame, textvariable=self.speed_var, 
                                   values=speed_options, state="readonly", width=15)
         speed_combo.pack(side="left")
@@ -417,14 +417,14 @@ class CyberScannerPRO:
         main_buttons_frame = tk.Frame(buttons_frame, bg=self.get_theme_color('bg'))
         main_buttons_frame.pack(fill="x", pady=(10, 0))
         
-        # Button configuration
+        # Configuration des boutons
         buttons = [
-            ("🔍 Scan Ports", self.start_port_scan, "#4a9eff"),
-            ("🔍 Network Discovery", self.start_network_discovery, "#22c55e"),
+            ("🔍 Scanner Ports", self.start_port_scan, "#4a9eff"),
+            ("🔍 Découverte Réseau", self.start_network_discovery, "#22c55e"),
             ("📡 Ping", self.start_ping, "#f59e0b"),
-            ("🌐 IP Lookup", self.start_ip_lookup, "#8b5cf6"),
-            ("📋 WHOIS Lookup", self.start_whois_lookup, "#f97316"),
-            ("💻 System Info", self.show_system_info, "#ef4444")
+            ("🌐 Info IP", self.start_ip_lookup, "#8b5cf6"),
+            ("📋 Recherche WHOIS", self.start_whois_lookup, "#f97316"),
+            ("💻 Infos Système", self.show_system_info, "#ef4444")
         ]
         
         for text, command, color in buttons:
@@ -452,12 +452,12 @@ class CyberScannerPRO:
         self.is_scanning = False
         self.stop_scan = False
         
-        # Control buttons
+        # Boutons de contrôle
         control_buttons = [
-            ("⏹️ Stop Scan", self.stop_current_scan, "#ef4444"),
-            ("🗑️ Clear Output", self.clear_output, "#6b7280"),
-            ("📤 Export Results", self.export_results, "#22c55e"),
-            ("📊 Scan History", self.show_scan_history, "#8b5cf6")
+            ("⏹️ Arrêter Scan", self.stop_current_scan, "#ef4444"),
+            ("🗑️ Effacer Sortie", self.clear_output, "#6b7280"),
+            ("📤 Exporter Résultats", self.export_results, "#22c55e"),
+            ("📊 Historique Scans", self.show_scan_history, "#8b5cf6")
         ]
         
         for text, command, color in control_buttons:
@@ -527,8 +527,8 @@ class CyberScannerPRO:
         inner_frame = tk.Frame(save_frame, bg=self.get_theme_color('bg'))
         inner_frame.pack(fill="x")
         
-        # Label
-        tk.Label(inner_frame, text="Choose Save File", 
+        # Étiquette
+        tk.Label(inner_frame, text="Fichier de Sauvegarde", 
                 font=("Segoe UI", 10), bg=self.get_theme_color('bg'), fg=self.get_theme_color('text_secondary')).pack(side="left", padx=(0, 15))
         
         # Path entry
@@ -619,18 +619,18 @@ class CyberScannerPRO:
     def start_port_scan(self):
         """Start port scanning in separate thread"""
         if self.is_scanning:
-            messagebox.showwarning("Scan en cours", "Un scan est déjà en cours. Utilisez 'Stop Scan' pour l'arrêter.")
+            messagebox.showwarning("Scan en cours", "Un scan est déjà en cours. Utilisez 'Arrêter Scan' pour l'interrompre.")
             return
             
         target = self.ip_entry.get().strip()
         if not target:
-            messagebox.showerror("Erreur", "Veuillez entrer une adresse IP ou un domaine")
+            messagebox.showerror("Erreur", "Veuillez saisir une adresse IP ou un nom de domaine")
             return
         
         ports_text = self.ports_entry.get().strip()
         ports = self.parse_ports(ports_text)
         if not ports:
-            messagebox.showerror("Erreur", "Format de ports invalide")
+            messagebox.showerror("Erreur", "Format de ports non valide")
             return
         
         # Enable stop button
@@ -640,8 +640,8 @@ class CyberScannerPRO:
         
         self.clear_output()
         timeout = self.get_scan_timeout()
-        self.write_output(f"🔍 Scan en cours de {target} sur {len(ports)} ports...")
-        self.write_output(f"⚙️ Vitesse: {self.speed_var.get()} (timeout: {timeout}s)")
+        self.write_output(f"🔍 Analyse des ports en cours sur {target} ({len(ports)} ports)...")
+        self.write_output(f"⚙️ Vitesse d'analyse: {self.speed_var.get()} (délai: {timeout}s)")
         self.write_output("=" * 60)
         
         def scan_worker():
@@ -651,7 +651,7 @@ class CyberScannerPRO:
             
             for i, port in enumerate(ports):
                 if self.stop_scan:
-                    self.write_output("🛑 Scan arrêté par l'utilisateur")
+                    self.write_output("🛑 Analyse interrompue par l'utilisateur")
                     break
                     
                 try:
@@ -668,15 +668,15 @@ class CyberScannerPRO:
                 except Exception as e:
                     self.write_output(f"⚠️  Port {port:5d} | Erreur: {str(e)}")
             
-            # Results summary
+            # Résumé des résultats
             self.write_output("=" * 60)
-            self.write_output(f"📊 RÉSULTATS DU SCAN")
-            self.write_output(f"   Cible: {target}")
-            self.write_output(f"   Ports scannés: {i+1 if not self.stop_scan else len(ports)}")
-            self.write_output(f"   Ports ouverts: {len(open_ports)}")
+            self.write_output(f"📊 RÉSULTATS DE L'ANALYSE DES PORTS")
+            self.write_output(f"   Cible analysée: {target}")
+            self.write_output(f"   Ports analysés: {i+1 if not self.stop_scan else len(ports)}")
+            self.write_output(f"   Ports ouverts détectés: {len(open_ports)}")
             
             if open_ports:
-                self.write_output(f"\n🎯 PORTS OUVERTS TROUVÉS:")
+                self.write_output(f"\n🎯 PORTS OUVERTS DÉTECTÉS:")
                 for port, service in open_ports:
                     self.write_output(f"   ✅ Port {port} | {service}")
             
@@ -685,16 +685,16 @@ class CyberScannerPRO:
             self.stop_scan = False
             self.stop_btn.config(state="disabled")
             
-            # Save to database
+            # Sauvegarder dans la base de données
             open_ports_simple = [p[0] for p in open_ports]
             self.db.save_scan(
-                scan_type="Port Scan",
+                scan_type="Analyse de Ports",
                 target=target,
                 ports_scanned=i+1 if not self.stop_scan else len(ports),
                 ports_open=len(open_ports),
                 open_ports_list=open_ports_simple,
                 duration=time.time() - start_time,
-                status="stopped" if self.stop_scan else "completed"
+                status="interrompu" if self.stop_scan else "terminé"
             )
             
             # Auto-save results
@@ -729,14 +729,14 @@ class CyberScannerPRO:
                 self.write_output(f"⚠️  Erreur de sauvegarde: {str(e)}")
     
     def start_ping(self):
-        """Start ping in separate thread"""
+        """Démarrer le ping dans un thread séparé"""
         target = self.ip_entry.get().strip()
         if not target:
-            messagebox.showerror("Erreur", "Veuillez entrer une adresse IP ou un domaine")
+            messagebox.showerror("Erreur", "Veuillez saisir une adresse IP ou un nom de domaine")
             return
         
         self.clear_output()
-        self.write_output(f"📡 Ping de {target}...")
+        self.write_output(f"📡 Test de connectivité vers {target}...")
         self.write_output("=" * 60)
         
         def ping_worker():
@@ -749,14 +749,14 @@ class CyberScannerPRO:
         threading.Thread(target=ping_worker, daemon=True).start()
     
     def start_ip_lookup(self):
-        """Start IP lookup in separate thread"""
+        """Démarrer la recherche IP dans un thread séparé"""
         target = self.ip_entry.get().strip()
         if not target:
-            messagebox.showerror("Erreur", "Veuillez entrer une adresse IP ou un domaine")
+            messagebox.showerror("Erreur", "Veuillez saisir une adresse IP ou un nom de domaine")
             return
         
         self.clear_output()
-        self.write_output(f"🌐 Recherche d'informations pour {target}...")
+        self.write_output(f"🌐 Recherche d'informations géographiques pour {target}...")
         self.write_output("=" * 60)
         
         def lookup_worker():
@@ -769,14 +769,14 @@ class CyberScannerPRO:
         threading.Thread(target=lookup_worker, daemon=True).start()
     
     def start_whois_lookup(self):
-        """Start WHOIS lookup in separate thread"""
+        """Démarrer la recherche WHOIS dans un thread séparé"""
         target = self.ip_entry.get().strip()
         if not target:
-            messagebox.showerror("Erreur", "Veuillez entrer un domaine ou une IP")
+            messagebox.showerror("Erreur", "Veuillez saisir un nom de domaine ou une adresse IP")
             return
         
         self.clear_output()
-        self.write_output(f"📋 Recherche WHOIS pour {target}...")
+        self.write_output(f"📋 Recherche d'informations WHOIS pour {target}...")
         self.write_output("=" * 60)
         
         def whois_worker():
@@ -789,15 +789,15 @@ class CyberScannerPRO:
         threading.Thread(target=whois_worker, daemon=True).start()
     
     def show_system_info(self):
-        """Show system information"""
+        """Afficher les informations système"""
         self.clear_output()
-        self.write_output("💻 Informations système")
+        self.write_output("💻 Informations du Système")
         self.write_output("=" * 60)
         try:
             result = system_info()
             self.write_output(result)
         except Exception as e:
-            self.write_output(f"⚠️  Erreur: {str(e)}")
+            self.write_output(f"⚠️  Erreur lors de la récupération: {str(e)}")
     
     def get_my_ip(self):
         """Get public IP and copy to clipboard"""
@@ -833,7 +833,7 @@ class CyberScannerPRO:
     def start_network_discovery(self):
         """Start network discovery scan"""
         if self.is_scanning:
-            messagebox.showwarning("Scan en cours", "Un scan est déjà en cours")
+            messagebox.showwarning("Analyse en cours", "Une analyse est déjà en cours d'exécution")
             return
         
         target = self.ip_entry.get().strip()
@@ -847,7 +847,7 @@ class CyberScannerPRO:
                 self.ip_entry.delete(0, tk.END)
                 self.ip_entry.insert(0, target)
             except:
-                messagebox.showerror("Erreur", "Veuillez entrer une plage d'IPs (ex: 192.168.1.1-254)")
+                messagebox.showerror("Erreur", "Veuillez saisir une plage d'adresses IP (ex: 192.168.1.1-254)")
                 return
         
         self.is_scanning = True
@@ -855,8 +855,8 @@ class CyberScannerPRO:
         self.stop_btn.config(state="normal")
         
         self.clear_output()
-        self.write_output(f"🔍 Découverte réseau en cours...")
-        self.write_output(f"🎯 Cible: {target}")
+        self.write_output(f"🔍 Découverte du réseau en cours...")
+        self.write_output(f"🎯 Plage analysée: {target}")
         self.write_output("=" * 60)
         
         def discovery_worker():
@@ -871,8 +871,8 @@ class CyberScannerPRO:
                     end_host = int(start_end[1])
                     total = end_host - start_host + 1
                     
-                    self.write_output(f"🔍 Scanning {total} hosts in range {target}")
-                    self.write_output(f"⚡ Using fast multi-port detection...")
+                    self.write_output(f"🔍 Analyse de {total} hôtes dans la plage {target}")
+                    self.write_output(f"⚡ Utilisation de la détection rapide multi-ports...")
                     self.write_output("")
                     
                     def progress_update(current, total_hosts, found_host):
@@ -896,7 +896,7 @@ class CyberScannerPRO:
                     # Use fast network discovery
                     for i in range(start_host, end_host + 1):
                         if self.stop_scan:
-                            self.write_output("🛑 Scan arrêté par l'utilisateur")
+                            self.write_output("🛑 Analyse interrompue par l'utilisateur")
                             break
                         
                         test_ip = f"{base_ip}.{i}"
@@ -911,9 +911,9 @@ class CyberScannerPRO:
                         progress = (current / total) * 100
                         self.progress['value'] = progress
                         
-                        # Show progress updates
+                        # Afficher les mises à jour de progression
                         if current % 20 == 0 or total <= 50:
-                            self.write_output(f"🔍 Progression: {current}/{total} hosts scannés ({progress:.1f}%)")
+                            self.write_output(f"🔍 Progression: {current}/{total} hôtes analysés ({progress:.1f}%)")
                         
                         self.root.update_idletasks()
                     
@@ -922,29 +922,29 @@ class CyberScannerPRO:
                     self.write_output("")
                     self.write_output("=" * 60)
                     self.write_output(f"📊 RÉSULTATS DE LA DÉCOUVERTE RÉSEAU")
-                    self.write_output(f"   Plage scannée: {target}")
+                    self.write_output(f"   Plage analysée: {target}")
                     self.write_output(f"   Hôtes testés: {i - start_host + 1 if not self.stop_scan else total}")
-                    self.write_output(f"   Hôtes actifs: {len(alive_hosts)}")
-                    self.write_output(f"   Durée: {duration:.2f} secondes")
+                    self.write_output(f"   Hôtes actifs trouvés: {len(alive_hosts)}")
+                    self.write_output(f"   Temps d'exécution: {duration:.2f} secondes")
                     
                     if alive_hosts:
-                        self.write_output(f"\n🎯 HÔTES ACTIFS TROUVÉS:")
+                        self.write_output(f"\n🎯 HÔTES ACTIFS DÉTECTÉS:")
                         for host in alive_hosts:
                             self.write_output(f"   ✅ {host}")
                         
-                        # Save to database
+                        # Sauvegarder dans la base de données
                         self.db.save_scan(
-                            scan_type="Network Discovery",
+                            scan_type="Découverte Réseau",
                             target=target,
-                            ports_scanned=len(alive_hosts),  # Use active hosts as "ports"
+                            ports_scanned=len(alive_hosts),  # Utiliser les hôtes actifs comme "ports"
                             ports_open=len(alive_hosts),
                             open_ports_list=alive_hosts,
                             duration=duration,
-                            status="stopped" if self.stop_scan else "completed"
+                            status="interrompu" if self.stop_scan else "terminé"
                         )
                     else:
-                        self.write_output(f"   ❌ Aucun hôte actif trouvé dans cette plage")
-                        self.write_output(f"   💡 Vérifiez que vous êtes sur le bon réseau")
+                        self.write_output(f"   ❌ Aucun hôte actif détecté dans cette plage d'adresses")
+                        self.write_output(f"   💡 Vérifiez que vous êtes connecté au bon réseau")
                 
             except Exception as e:
                 self.write_output(f"⚠️ Erreur: {e}")
@@ -958,38 +958,38 @@ class CyberScannerPRO:
         threading.Thread(target=discovery_worker, daemon=True).start()
     
     def stop_current_scan(self):
-        """Stop the current scan"""
+        """Arrêter l'analyse en cours"""
         if self.is_scanning:
             self.stop_scan = True
-            self.write_output("🛑 Demande d'arrêt envoyée...")
+            self.write_output("🛑 Demande d'interruption envoyée...")
         else:
-            messagebox.showinfo("Info", "Aucun scan en cours")
+            messagebox.showinfo("Information", "Aucune analyse en cours d'exécution")
     
     def export_results(self):
-        """Export current output to file"""
+        """Exporter les résultats actuels vers un fichier"""
         content = self.output.get(1.0, tk.END).strip()
         if not content:
-            messagebox.showwarning("Attention", "Aucun résultat à exporter")
+            messagebox.showwarning("Attention", "Aucun résultat disponible pour l'exportation")
             return
         
         filename = filedialog.asksaveasfilename(
             initialdir=os.path.join(os.getcwd(), "output"),
             initialfile="cyber_scanner_export.txt",
             defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-            title="Exporter les résultats"
+            filetypes=[("Fichiers texte", "*.txt"), ("Tous les fichiers", "*.*")],
+            title="Exporter les résultats d'analyse"
         )
         
         if filename:
             try:
                 with open(filename, "w", encoding="utf-8") as f:
-                    f.write(f"Cyber Scanner PRO - Export\n")
+                    f.write(f"Cyber Scanner PRO - Exportation des Résultats\n")
                     f.write(f"{'=' * 50}\n")
-                    f.write(f"Date: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+                    f.write(f"Date d'exportation: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
                     f.write(content)
-                messagebox.showinfo("Succès", f"Résultats exportés vers:\n{filename}")
+                messagebox.showinfo("Exportation Réussie", f"Résultats exportés avec succès vers:\n{filename}")
             except Exception as e:
-                messagebox.showerror("Erreur", f"Erreur lors de l'export: {e}")
+                messagebox.showerror("Erreur d'Exportation", f"Impossible d'exporter les résultats: {e}")
     
     def show_scan_history(self):
         """Show scan history from database"""
@@ -1033,7 +1033,7 @@ class CyberScannerPRO:
                                width=12, height=1)
         refresh_btn.pack(side="left", padx=(0, 10))
         
-        clear_btn = tk.Button(control_frame, text="🗑️ Effacer historique", 
+        clear_btn = tk.Button(control_frame, text="🗑️ Vider l'Historique", 
                              command=lambda: self.clear_scan_history_confirm(history_text),
                              font=("Segoe UI", 9, "bold"), 
                              bg="#ef4444", fg="white",
@@ -1041,12 +1041,12 @@ class CyberScannerPRO:
                              width=15, height=1)
         clear_btn.pack(side="left", padx=(0, 10))
         
-        export_btn = tk.Button(control_frame, text="📤 Exporter historique", 
+        export_btn = tk.Button(control_frame, text="📤 Exporter l'Historique", 
                               command=self.export_scan_history,
                               font=("Segoe UI", 9, "bold"), 
                               bg="#22c55e", fg="white",
                               bd=0, relief="flat", cursor="hand2",
-                              width=15, height=1)
+                              width=16, height=1)
         export_btn.pack(side="left")
         
         # History display with improved formatting
@@ -1083,16 +1083,16 @@ class CyberScannerPRO:
             # Clear existing content
             text_widget.delete(1.0, tk.END)
             
-            # Header
-            text_widget.insert(tk.END, "CYBER SCANNER PRO - HISTORIQUE DES SCANS\n")
+            # En-tête
+            text_widget.insert(tk.END, "CYBER SCANNER PRO - HISTORIQUE DES ANALYSES\n")
             text_widget.insert(tk.END, "=" * 80 + "\n\n")
             
-            # Load history from database
+            # Charger l'historique depuis la base de données
             history = self.db.get_scan_history(100)
             
             if not history:
-                text_widget.insert(tk.END, "📭 Aucun scan dans l'historique.\n")
-                text_widget.insert(tk.END, "💡 Effectuez votre premier scan pour voir les résultats ici!\n")
+                text_widget.insert(tk.END, "📭 Aucune analyse dans l'historique.\n")
+                text_widget.insert(tk.END, "💡 Effectuez votre première analyse pour voir les résultats ici!\n")
                 return
             
             # Group scans by date
@@ -1123,16 +1123,16 @@ class CyberScannerPRO:
                     
                     scan_count += 1
                     
-                    # Scan details
+                    # Détails de l'analyse
                     scan_type = scan.get('scan_type', 'N/A')
                     target = scan.get('target', 'N/A')
                     ports_open = scan.get('ports_open', 0)
                     ports_scanned = scan.get('ports_scanned', 0)
                     duration = scan.get('duration', 0.0)
-                    status = scan.get('status', 'completed')
+                    status = scan.get('status', 'terminé')
                     
-                    # Status icon
-                    status_icon = "✅" if status == "completed" else "⏹️" if status == "stopped" else "❌"
+                    # Icône de statut
+                    status_icon = "✅" if status == "terminé" else "⏹️" if status == "interrompu" else "❌"
                     
                     # Format duration
                     if duration > 60:
@@ -1143,10 +1143,10 @@ class CyberScannerPRO:
                     # Scan entry
                     text_widget.insert(tk.END, f"{status_icon} {scan_time} | {scan_type:<15} | {target:<25}\n")
                     
-                    if scan_type == "Port Scan":
+                    if "Port" in scan_type:
                         text_widget.insert(tk.END, f"    📊 Résultats: {ports_open}/{ports_scanned} ports ouverts | Durée: {duration_str}\n")
                         
-                        # Show open ports if available
+                        # Afficher les ports ouverts si disponibles
                         open_ports_str = scan.get('open_ports', '[]')
                         try:
                             import json
@@ -1154,13 +1154,13 @@ class CyberScannerPRO:
                             if open_ports and len(open_ports) > 0:
                                 if len(open_ports) <= 10:
                                     ports_display = ', '.join(map(str, open_ports))
-                                    text_widget.insert(tk.END, f"    🎯 Ports ouverts: {ports_display}\n")
+                                    text_widget.insert(tk.END, f"    🎯 Ports détectés: {ports_display}\n")
                                 else:
-                                    text_widget.insert(tk.END, f"    🎯 Ports ouverts: {', '.join(map(str, open_ports[:10]))}... (+{len(open_ports)-10} autres)\n")
+                                    text_widget.insert(tk.END, f"    🎯 Ports détectés: {', '.join(map(str, open_ports[:10]))}... (+{len(open_ports)-10} autres)\n")
                         except:
                             pass
                     else:
-                        text_widget.insert(tk.END, f"    ⏱️ Durée: {duration_str}\n")
+                        text_widget.insert(tk.END, f"    ⏱️ Durée d'exécution: {duration_str}\n")
                     
                     text_widget.insert(tk.END, "\n")
                     
@@ -1168,9 +1168,9 @@ class CyberScannerPRO:
                     text_widget.insert(tk.END, f"❌ Erreur lors du formatage d'un scan: {e}\n")
                     continue
             
-            # Summary
+            # Résumé
             text_widget.insert(tk.END, "=" * 80 + "\n")
-            text_widget.insert(tk.END, f"📈 Total des scans affichés: {scan_count}\n")
+            text_widget.insert(tk.END, f"📈 Total des analyses affichées: {scan_count}\n")
             text_widget.insert(tk.END, f"🕒 Dernière mise à jour: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             
         except Exception as e:
@@ -1178,23 +1178,23 @@ class CyberScannerPRO:
             print(f"Erreur détaillée: {e}")
     
     def refresh_history_display(self, text_widget):
-        """Refresh the history display"""
+        """Actualiser l'affichage de l'historique"""
         self.load_formatted_history(text_widget)
-        messagebox.showinfo("Actualisé", "Historique des scans mis à jour!")
+        messagebox.showinfo("Actualisé", "Historique des analyses mis à jour avec succès!")
     
     def clear_scan_history_confirm(self, text_widget):
-        """Confirm and clear scan history"""
-        if messagebox.askyesno("Confirmation", 
-                              "⚠️ Êtes-vous sûr de vouloir effacer TOUT l'historique?\n\n"
-                              "Cette action est irréversible!"):
+        """Confirmer et vider l'historique des analyses"""
+        if messagebox.askyesno("Confirmation de Suppression", 
+                              "⚠️ Êtes-vous certain de vouloir supprimer TOUT l'historique?\n\n"
+                              "Cette action est définitive et irréversible!"):
             try:
                 if self.db.clear_history():
                     self.load_formatted_history(text_widget)
-                    messagebox.showinfo("Succès", "✅ Historique effacé avec succès!")
+                    messagebox.showinfo("Suppression Réussie", "✅ Historique des analyses supprimé avec succès!")
                 else:
-                    messagebox.showerror("Erreur", "❌ Impossible d'effacer l'historique")
+                    messagebox.showerror("Erreur de Suppression", "❌ Impossible de supprimer l'historique")
             except Exception as e:
-                messagebox.showerror("Erreur", f"❌ Erreur: {e}")
+                messagebox.showerror("Erreur", f"❌ Erreur lors de la suppression: {e}")
     
     def export_scan_history(self):
         """Export scan history to file"""

@@ -29,14 +29,14 @@ def system_info():
     """
     try:
         info_lines = [
-            "=== Informations système ===",
-            f"Nom de la machine: {platform.node()}",
-            f"Système: {platform.system()}",
-            f"Release: {platform.release()}",
-            f"Version: {platform.version()}",
-            f"Architecture: {platform.machine()}",
-            f"Processeur: {platform.processor()}",
-            f"Python: {platform.python_version()}"
+            "=== INFORMATIONS DU SYSTÈME ===",
+            f"Nom de l'ordinateur: {platform.node()}",
+            f"Système d'exploitation: {platform.system()}",
+            f"Version du système: {platform.release()}",
+            f"Détails de la version: {platform.version()}",
+            f"Architecture processeur: {platform.machine()}",
+            f"Type de processeur: {platform.processor()}",
+            f"Version Python: {platform.python_version()}"
         ]
         return "\n".join(info_lines)
     except Exception as e:
@@ -53,28 +53,28 @@ def ip_lookup(target):
         
         if data["status"] == "success":
             result_lines = [
-                "=== Informations IP/Géolocalisation ===",
-                f"IP: {data.get('query', 'N/A')}",
-                f"Pays: {data.get('country', 'N/A')} ({data.get('countryCode', 'N/A')})",
-                f"Région: {data.get('regionName', 'N/A')}",
-                f"Ville: {data.get('city', 'N/A')}",
-                f"Code postal: {data.get('zip', 'N/A')}",
-                f"ISP: {data.get('isp', 'N/A')}",
-                f"Organisation: {data.get('org', 'N/A')}",
-                f"Latitude: {data.get('lat', 'N/A')}",
-                f"Longitude: {data.get('lon', 'N/A')}",
-                f"Timezone: {data.get('timezone', 'N/A')}"
+                "=== INFORMATIONS IP ET GÉOLOCALISATION ===",
+                f"Adresse IP: {data.get('query', 'Non disponible')}",
+                f"Pays: {data.get('country', 'Non disponible')} ({data.get('countryCode', 'N/A')})",
+                f"Région/Province: {data.get('regionName', 'Non disponible')}",
+                f"Ville: {data.get('city', 'Non disponible')}",
+                f"Code postal: {data.get('zip', 'Non disponible')}",
+                f"Fournisseur Internet: {data.get('isp', 'Non disponible')}",
+                f"Organisation: {data.get('org', 'Non disponible')}",
+                f"Latitude: {data.get('lat', 'Non disponible')}",
+                f"Longitude: {data.get('lon', 'Non disponible')}",
+                f"Fuseau horaire: {data.get('timezone', 'Non disponible')}"
             ]
             return "\n".join(result_lines)
         else:
-            return f"Erreur lors de la recherche: {data.get('message', 'Impossible de trouver cette IP')}"
+            return f"Erreur lors de la recherche géographique: {data.get('message', 'Impossible de localiser cette adresse IP')}"
             
     except requests.exceptions.Timeout:
-        return "Erreur: Timeout lors de la requête"
+        return "Erreur: Délai d'attente dépassé lors de la requête de géolocalisation"
     except requests.exceptions.RequestException as e:
-        return f"Erreur de connexion: {e}"
+        return f"Erreur de connexion Internet: {e}"
     except Exception as e:
-        return f"Erreur inattendue: {e}"
+        return f"Erreur inattendue lors de la géolocalisation: {e}"
 
 def ping_host(target, count=4):
     """
@@ -91,14 +91,14 @@ def ping_host(target, count=4):
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         
         if result.returncode == 0:
-            return f"=== Résultats Ping ===\n{result.stdout}"
+            return f"=== RÉSULTATS DU TEST DE CONNECTIVITÉ ===\n{result.stdout}"
         else:
-            return f"=== Ping échoué ===\n{result.stderr}"
+            return f"=== TEST DE CONNECTIVITÉ ÉCHOUÉ ===\n{result.stderr}"
             
     except subprocess.TimeoutExpired:
-        return "Erreur: Timeout lors du ping"
+        return "Erreur: Délai d'attente dépassé lors du test de connectivité"
     except Exception as e:
-        return f"Erreur ping: {e}"
+        return f"Erreur lors du test de connectivité: {e}"
 
 def wifi_scan():
     """
@@ -166,36 +166,36 @@ def whois_lookup(domain):
         
         if w:
             result_lines = [
-                "=== Informations WHOIS ===",
-                f"Domaine: {w.domain_name if w.domain_name else domain}",
-                f"Registrar: {w.registrar if w.registrar else 'N/A'}",
-                f"Date de création: {w.creation_date if w.creation_date else 'N/A'}",
-                f"Date d'expiration: {w.expiration_date if w.expiration_date else 'N/A'}",
-                f"Dernière mise à jour: {w.updated_date if w.updated_date else 'N/A'}",
-                f"Statut: {w.status if w.status else 'N/A'}",
-                f"Serveurs DNS: {', '.join(w.name_servers) if w.name_servers else 'N/A'}",
-                f"Organisation: {w.org if w.org else 'N/A'}",
-                f"Pays: {w.country if w.country else 'N/A'}"
+                "=== INFORMATIONS D'ENREGISTREMENT WHOIS ===",
+                f"Nom de domaine: {w.domain_name if w.domain_name else domain}",
+                f"Registraire: {w.registrar if w.registrar else 'Non disponible'}",
+                f"Date de création: {w.creation_date if w.creation_date else 'Non disponible'}",
+                f"Date d'expiration: {w.expiration_date if w.expiration_date else 'Non disponible'}",
+                f"Dernière modification: {w.updated_date if w.updated_date else 'Non disponible'}",
+                f"Statut du domaine: {w.status if w.status else 'Non disponible'}",
+                f"Serveurs de noms DNS: {', '.join(w.name_servers) if w.name_servers else 'Non disponible'}",
+                f"Organisation propriétaire: {w.org if w.org else 'Non disponible'}",
+                f"Pays d'enregistrement: {w.country if w.country else 'Non disponible'}"
             ]
             return "\n".join(result_lines)
         else:
-            return "Aucune information WHOIS trouvée"
+            return "Aucune information d'enregistrement WHOIS trouvée pour ce domaine"
             
     except ImportError:
-        return "Erreur: Module python-whois non installé. Exécutez: pip install python-whois"
+        return "Erreur: Module python-whois non installé. Installez-le avec: pip install python-whois"
     except Exception as e:
-        return f"Erreur WHOIS: {e}"
+        return f"Erreur lors de la recherche WHOIS: {e}"
 
 def detect_service(port):
     """Detect common services on ports"""
     services = {
-        21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS",
-        80: "HTTP", 110: "POP3", 143: "IMAP", 443: "HTTPS", 993: "IMAPS",
-        995: "POP3S", 3389: "RDP", 5432: "PostgreSQL", 3306: "MySQL",
-        1433: "MSSQL", 6379: "Redis", 27017: "MongoDB", 8080: "HTTP-Alt",
-        8443: "HTTPS-Alt", 2222: "SSH-Alt", 8888: "HTTP-Proxy"
+        21: "FTP - Transfert de Fichiers", 22: "SSH - Shell Sécurisé", 23: "Telnet", 25: "SMTP - Courrier Électronique", 53: "DNS - Résolution de Noms",
+        80: "HTTP - Web", 110: "POP3 - Courrier Entrant", 143: "IMAP - Courrier Entrant", 443: "HTTPS - Web Sécurisé", 993: "IMAPS - Courrier Sécurisé",
+        995: "POP3S - Courrier Sécurisé", 3389: "RDP - Bureau à Distance", 5432: "PostgreSQL - Base de Données", 3306: "MySQL - Base de Données",
+        1433: "MSSQL - Base de Données Microsoft", 6379: "Redis - Cache de Données", 27017: "MongoDB - Base de Données NoSQL", 8080: "HTTP Alternatif",
+        8443: "HTTPS Alternatif", 2222: "SSH Alternatif", 8888: "Proxy HTTP"
     }
-    return services.get(port, "Service inconnu")
+    return services.get(port, "Service Non Identifié")
 
 def fast_ping(host, timeout=1):
     """
