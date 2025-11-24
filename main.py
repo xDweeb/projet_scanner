@@ -30,7 +30,7 @@ def check_dependencies():
     
     missing_packages = []
     
-    print("🔍 Vérification des dépendances...")
+    print("🔍 Vérification des modules requis...")
     
     for module_name, package_name in required_packages:
         try:
@@ -87,7 +87,7 @@ def create_project_structure():
 def main():
     """Main launcher function"""
     print("=" * 60)
-    print("🛡️  CYBER SCANNER PRO - LAUNCHER v2.0")
+    print("🛡️  CYBER SCANNER PRO - LANCEUR v2.0")
     print("=" * 60)
     print(f"📁 Répertoire de travail: {project_root}")
     
@@ -98,23 +98,23 @@ def main():
     missing = check_dependencies()
     
     if missing:
-        print(f"\n⚠️  Dépendances manquantes détectées: {len(missing)}")
+        print(f"\n⚠️  Modules manquants détectés: {len(missing)}")
         response = input("Voulez-vous les installer automatiquement? (o/n): ").lower()
         
         if response in ['o', 'oui', 'y', 'yes']:
             if not install_dependencies(missing):
-                print("\n❌ Échec de l'installation. Veuillez installer manuellement:")
+                print("\n❌ Échec de l'installation automatique. Veuillez installer manuellement:")
                 print("pip install -r requirements.txt")
                 input("Appuyez sur Entrée pour quitter...")
                 return
         else:
-            print("\n⚠️  Veuillez installer les dépendances manuellement:")
+            print("\n⚠️  Veuillez installer les modules requis manuellement:")
             print("pip install -r requirements.txt")
             input("Appuyez sur Entrée pour quitter...")
             return
     
-    # Launch the application
-    print("\n🚀 Lancement de Cyber Scanner PRO...")
+    # Lancer l'application
+    print("\n🚀 Démarrage de Cyber Scanner PRO...")
     print("=" * 60)
     
     try:

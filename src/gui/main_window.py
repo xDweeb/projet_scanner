@@ -133,11 +133,14 @@ class CyberScannerPRO:
         texts = ["Chargement", "Chargement.", "Chargement..", "Chargement..."]
         
         def update_text(index=0):
-            if hasattr(self, 'loading_label') and self.loading_label.winfo_exists():
-                self.loading_label.config(text=texts[index % len(texts)])
-                if hasattr(self, 'splash') and self.splash.winfo_exists():
-                    next_index = (index + 1) % len(texts)
-                    self.splash.after(300, lambda: update_text(next_index))
+            try:
+                if hasattr(self, 'loading_label') and self.loading_label.winfo_exists():
+                    self.loading_label.config(text=texts[index % len(texts)])
+                    if hasattr(self, 'splash') and self.splash.winfo_exists():
+                        next_index = (index + 1) % len(texts)
+                        self.splash.after(300, update_text, next_index)
+            except:
+                pass
         
         update_text()
     
@@ -421,9 +424,10 @@ class CyberScannerPRO:
         buttons = [
             ("🔍 Scanner Ports", self.start_port_scan, "#4a9eff"),
             ("🔍 Découverte Réseau", self.start_network_discovery, "#22c55e"),
-            ("📡 Ping", self.start_ping, "#f59e0b"),
-            ("🌐 Info IP", self.start_ip_lookup, "#8b5cf6"),
+            ("📡 Test Ping", self.start_ping, "#f59e0b"),
+            ("🌐 Géolocalisation IP", self.start_ip_lookup, "#8b5cf6"),
             ("📋 Recherche WHOIS", self.start_whois_lookup, "#f97316"),
+            ("📶 Analyse WiFi", self.start_wifi_scan, "#9333ea"),
             ("💻 Infos Système", self.show_system_info, "#ef4444")
         ]
         
@@ -473,7 +477,7 @@ class CyberScannerPRO:
             btn.pack(side="left", padx=(0, 8))
             
             # Store stop button reference
-            if "Stop" in text:
+            if "Arrêter Scan" in text:
                 self.stop_btn = btn
                 btn.config(state="disabled")  # Initially disabled
             
@@ -633,10 +637,11 @@ class CyberScannerPRO:
             messagebox.showerror("Erreur", "Format de ports non valide")
             return
         
-        # Enable stop button
+        # Activer le bouton d'arrêt
         self.is_scanning = True
         self.stop_scan = False
-        self.stop_btn.config(state="normal")
+        if hasattr(self, 'stop_btn'):
+            self.stop_btn.config(state="normal")
         
         self.clear_output()
         timeout = self.get_scan_timeout()
@@ -650,6 +655,7 @@ class CyberScannerPRO:
             total = len(ports)
             
             for i, port in enumerate(ports):
+                # Check for stop request more frequently
                 if self.stop_scan:
                     self.write_output("🛑 Analyse interrompue par l'utilisateur")
                     break
@@ -660,13 +666,19 @@ class CyberScannerPRO:
                         self.write_output(f"✅ Port {port:5d} | OUVERT | {service}")
                         open_ports.append((port, service))
                     
-                    # Update progress
+                    # Update progress and check for stop again
                     progress_val = (i + 1) / total * 100
                     self.progress['value'] = progress_val
+                    
+                    # Force GUI update and check stop condition
                     self.root.update_idletasks()
+                    if self.stop_scan:
+                        self.write_output("🛑 Analyse interrompue par l'utilisateur")
+                        break
                     
                 except Exception as e:
-                    self.write_output(f"⚠️  Port {port:5d} | Erreur: {str(e)}")
+                    if not self.stop_scan:  # Only show errors if not stopping
+                        self.write_output(f"⚠️  Port {port:5d} | Erreur: {str(e)}")
             
             # Résumé des résultats
             self.write_output("=" * 60)
@@ -683,7 +695,8 @@ class CyberScannerPRO:
             # Reset scan state
             self.is_scanning = False
             self.stop_scan = False
-            self.stop_btn.config(state="disabled")
+            if hasattr(self, 'stop_btn'):
+                self.stop_btn.config(state="disabled", text="⏹️ Arrêter Scan")
             
             # Sauvegarder dans la base de données
             open_ports_simple = [p[0] for p in open_ports]
@@ -788,6 +801,21 @@ class CyberScannerPRO:
         
         threading.Thread(target=whois_worker, daemon=True).start()
     
+    def start_wifi_scan(self):
+        """Démarrer l'analyse WiFi dans un thread séparé"""
+        self.clear_output()
+        self.write_output("📶 Analyse des réseaux WiFi disponibles...")
+        self.write_output("=" * 60)
+        
+        def wifi_worker():
+            try:
+                result = wifi_scan()
+                self.write_output(result)
+            except Exception as e:
+                self.write_output(f"⚠️  Erreur lors de l'analyse WiFi: {str(e)}")
+        
+        threading.Thread(target=wifi_worker, daemon=True).start()
+    
     def show_system_info(self):
         """Afficher les informations système"""
         self.clear_output()
@@ -831,28 +859,31 @@ class CyberScannerPRO:
         threading.Thread(target=ip_worker, daemon=True).start()
     
     def start_network_discovery(self):
-        """Start network discovery scan"""
+        """Démarrer la découverte de réseau simple"""
         if self.is_scanning:
             messagebox.showwarning("Analyse en cours", "Une analyse est déjà en cours d'exécution")
             return
         
         target = self.ip_entry.get().strip()
+        
+        # Si pas de cible spécifiée, utiliser une plage par défaut
         if not target:
             try:
                 import socket
                 hostname = socket.gethostname()
                 local_ip = socket.gethostbyname(hostname)
                 network_base = '.'.join(local_ip.split('.')[:-1])
-                target = f"{network_base}.1-254"
+                target = f"{network_base}.1-50"  # Plage réduite pour être plus rapide
                 self.ip_entry.delete(0, tk.END)
                 self.ip_entry.insert(0, target)
             except:
-                messagebox.showerror("Erreur", "Veuillez saisir une plage d'adresses IP (ex: 192.168.1.1-254)")
+                messagebox.showerror("Erreur", "Veuillez saisir une plage d'adresses IP (ex: 192.168.1.1-50)")
                 return
         
         self.is_scanning = True
         self.stop_scan = False
-        self.stop_btn.config(state="normal")
+        if hasattr(self, 'stop_btn'):
+            self.stop_btn.config(state="normal")
         
         self.clear_output()
         self.write_output(f"🔍 Découverte du réseau en cours...")
@@ -895,6 +926,7 @@ class CyberScannerPRO:
                     
                     # Use fast network discovery
                     for i in range(start_host, end_host + 1):
+                        # Check for stop request
                         if self.stop_scan:
                             self.write_output("🛑 Analyse interrompue par l'utilisateur")
                             break
@@ -911,11 +943,15 @@ class CyberScannerPRO:
                         progress = (current / total) * 100
                         self.progress['value'] = progress
                         
+                        # Force GUI update and check stop condition again
+                        self.root.update_idletasks()
+                        if self.stop_scan:
+                            self.write_output("🛑 Analyse interrompue par l'utilisateur")
+                            break
+                        
                         # Afficher les mises à jour de progression
                         if current % 20 == 0 or total <= 50:
                             self.write_output(f"🔍 Progression: {current}/{total} hôtes analysés ({progress:.1f}%)")
-                        
-                        self.root.update_idletasks()
                     
                     # Results
                     duration = time.time() - start_time
@@ -952,7 +988,8 @@ class CyberScannerPRO:
             finally:
                 self.is_scanning = False
                 self.stop_scan = False
-                self.stop_btn.config(state="disabled")
+                if hasattr(self, 'stop_btn'):
+                    self.stop_btn.config(state="disabled", text="⏹️ Arrêter Scan")
                 self.progress['value'] = 0
         
         threading.Thread(target=discovery_worker, daemon=True).start()
@@ -961,7 +998,16 @@ class CyberScannerPRO:
         """Arrêter l'analyse en cours"""
         if self.is_scanning:
             self.stop_scan = True
-            self.write_output("🛑 Demande d'interruption envoyée...")
+            self.write_output("🛑 Demande d'interruption envoyée... Veuillez patienter.")
+            self.write_output("⏳ Arrêt de l'analyse en cours...")
+            
+            # Désactiver temporairement le bouton d'arrêt pour éviter les clics multiples
+            if hasattr(self, 'stop_btn'):
+                self.stop_btn.config(state="disabled", text="⏳ Arrêt en cours...")
+                # Réactiver après un court délai
+                self.root.after(2000, lambda: (
+                    self.stop_btn.config(state="normal", text="⏹️ Arrêter Scan") if hasattr(self, 'stop_btn') else None
+                ))
         else:
             messagebox.showinfo("Information", "Aucune analyse en cours d'exécution")
     

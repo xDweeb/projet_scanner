@@ -2,8 +2,8 @@ Cyber Scanner PRO - Scan Report
 ============================================================
 
 Target: 196.75.115.217
-Date: 2025-11-24 15:51:58
-Ports scannés: 1-10
+Date: 2025-11-24 16:22:33
+Ports scannés: 1-1024
 Ports ouverts: 0
 
 Aucun port ouvert trouvé.

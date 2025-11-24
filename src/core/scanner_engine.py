@@ -102,27 +102,102 @@ def ping_host(target, count=4):
 
 def wifi_scan():
     """
-    Scan for available WiFi networks.
+    Analyser les réseaux WiFi disponibles avec plusieurs méthodes.
     """
     try:
         system = platform.system().lower()
         
         if system == "windows":
-            cmd = ["netsh", "wlan", "show", "networks", "mode=Bssid"]
+            output_parts = []
+            
+            # Method 1: Check WiFi adapter status first
+            try:
+                cmd_adapter = ["netsh", "wlan", "show", "drivers"]
+                result_adapter = subprocess.run(cmd_adapter, capture_output=True, text=True, timeout=10, encoding='utf-8', errors='ignore')
+                
+                if result_adapter.returncode == 0:
+                    if "not running" in result_adapter.stdout.lower() or "service is not running" in result_adapter.stdout.lower():
+                        return "❌ Service WiFi non démarré. Activez le WiFi dans les paramètres Windows."
+                else:
+                    return "❌ Aucun adaptateur WiFi détecté sur ce système."
+            except Exception:
+                pass
+            
+            # Method 2: Get available networks (live scan)
+            try:
+                cmd_available = ["netsh", "wlan", "show", "networks", "mode=bssid"]
+                result_available = subprocess.run(cmd_available, capture_output=True, text=True, timeout=15, encoding='utf-8', errors='ignore')
+                
+                if result_available.returncode == 0 and result_available.stdout:
+                    if "There is no wireless interface" in result_available.stdout:
+                        output_parts.append("❌ Aucune interface WiFi disponible.")
+                    elif "networks currently visible" in result_available.stdout or "SSID" in result_available.stdout:
+                        output_parts.append("=== 📡 RÉSEAUX WiFi DISPONIBLES ===")
+                        output_parts.append(result_available.stdout)
+                    else:
+                        output_parts.append("⚠️ Aucun réseau WiFi détecté à proximité.")
+            except Exception as e:
+                output_parts.append(f"⚠️ Erreur lors du scan des réseaux disponibles: {e}")
+            
+            # Method 3: Get saved profiles
+            try:
+                cmd_profiles = ["netsh", "wlan", "show", "profiles"]
+                result_profiles = subprocess.run(cmd_profiles, capture_output=True, text=True, timeout=10, encoding='utf-8', errors='ignore')
+                
+                if result_profiles.returncode == 0 and result_profiles.stdout:
+                    if "User profiles" in result_profiles.stdout or "Profil Utilisateur" in result_profiles.stdout:
+                        output_parts.append("\n=== 💾 RÉSEAUX WiFi ENREGISTRÉS ===")
+                        output_parts.append(result_profiles.stdout)
+            except Exception:
+                pass
+            
+            # Method 4: PowerShell fallback for detailed info
+            if not output_parts:
+                try:
+                    ps_cmd = '''
+                    Get-NetAdapter | Where-Object {$_.InterfaceDescription -like "*Wi-Fi*" -or $_.InterfaceDescription -like "*Wireless*"} | 
+                    Select-Object Name, InterfaceDescription, Status, LinkSpeed | 
+                    Format-Table -AutoSize
+                    '''
+                    result_ps = subprocess.run(["powershell", "-Command", ps_cmd], 
+                                             capture_output=True, text=True, timeout=10, encoding='utf-8', errors='ignore')
+                    
+                    if result_ps.returncode == 0 and result_ps.stdout.strip():
+                        output_parts.append("=== 🔧 ADAPTATEURS WiFi DÉTECTÉS ===")
+                        output_parts.append(result_ps.stdout)
+                    else:
+                        output_parts.append("❌ Aucun adaptateur WiFi trouvé avec PowerShell.")
+                except Exception:
+                    output_parts.append("❌ Impossible d'analyser les adaptateurs WiFi.")
+            
+            # Return combined results or error message
+            if output_parts:
+                return "\n".join(output_parts)
+            else:
+                return "❌ WiFi non disponible: Vérifiez que votre adaptateur WiFi est activé et fonctionne correctement."
+                
         else:
-            cmd = ["nmcli", "-f", "SSID,SIGNAL,SECURITY", "dev", "wifi"]
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-        
-        if result.returncode == 0:
-            return f"=== Réseaux WiFi disponibles ===\n{result.stdout}"
-        else:
-            return f"Erreur lors du scan WiFi: {result.stderr}"
+            # Linux/Unix systems
+            methods = [
+                (["nmcli", "-f", "SSID,SIGNAL,SECURITY,CHAN", "dev", "wifi"], "NetworkManager"),
+                (["iwlist", "scan"], "iwlist"),
+                (["iw", "dev", "wlan0", "scan"], "iw tool")
+            ]
+            
+            for cmd, method_name in methods:
+                try:
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+                    if result.returncode == 0 and result.stdout:
+                        return f"=== RÉSEAUX WiFi DISPONIBLES ({method_name}) ===\n{result.stdout}"
+                except Exception:
+                    continue
+            
+            return "❌ Aucune méthode de scan WiFi disponible sur ce système Linux."
             
     except subprocess.TimeoutExpired:
-        return "Erreur: Timeout lors du scan WiFi"
+        return "⏱️ Erreur: Délai d'attente dépassé lors de l'analyse WiFi (réseau lent ou surchargé)"
     except Exception as e:
-        return f"Erreur WiFi scan: {e}"
+        return f"❌ Erreur générale lors de l'analyse WiFi: {e}"
 
 def get_my_ip():
     """
@@ -241,15 +316,15 @@ def fast_ping(host, timeout=1):
 
 def network_discovery(network_range, progress_callback=None):
     """
-    Discover active hosts in a network range.
-    network_range: string like "192.168.1.1-254"
-    progress_callback: function to call with (current, total, found_host)
+    Découvrir les hôtes actifs dans une plage réseau simple.
+    network_range: chaîne comme "192.168.1.1-254"
+    progress_callback: fonction à appeler avec (current, total, found_host)
     """
     try:
-        if '-' not in network_range:
+        if not network_range or '-' not in network_range:
             return []
         
-        # Parse network range
+        # Analyser la plage réseau
         base_ip = '.'.join(network_range.split('.')[:-1])
         start_end = network_range.split('.')[-1].split('-')
         start_host = int(start_end[0])
@@ -260,16 +335,33 @@ def network_discovery(network_range, progress_callback=None):
         
         for i in range(start_host, end_host + 1):
             test_ip = f"{base_ip}.{i}"
+            current = i - start_host + 1
             
             if fast_ping(test_ip, timeout=0.5):
                 alive_hosts.append(test_ip)
                 if progress_callback:
-                    progress_callback(i - start_host + 1, total, test_ip)
+                    progress_callback(current, total, f"✅ Hôte trouvé: {test_ip}")
             elif progress_callback:
-                progress_callback(i - start_host + 1, total, None)
+                progress_callback(current, total, None)
         
         return alive_hosts
         
     except Exception as e:
-        print(f"Network discovery error: {e}")
+        if progress_callback:
+            progress_callback(0, 1, f"❌ Erreur: {e}")
         return []
+
+# Fonction simplifiée pour obtenir l'IP locale
+def get_local_ip():
+    """Obtenir l'IP locale de façon simple"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except:
+        try:
+            import socket
+            hostname = socket.gethostname()
+            return socket.gethostbyname(hostname)
+        except:
+            return "127.0.0.1"
