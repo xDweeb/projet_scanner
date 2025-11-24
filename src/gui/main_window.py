@@ -15,7 +15,7 @@ from PIL import Image, ImageTk
 
 from src.core.scanner_engine import (port_scan, system_info, ip_lookup, ping_host, 
                                    wifi_scan, get_my_ip, whois_lookup, detect_service, 
-                                   fast_ping, network_discovery)
+                                   fast_ping)
 from src.database.db_manager import ScanDatabase
 
 class CyberScannerPRO:
@@ -423,8 +423,7 @@ class CyberScannerPRO:
         # Configuration des boutons
         buttons = [
             ("🔍 Scanner Ports", self.start_port_scan, "#4a9eff"),
-            ("🔍 Découverte Réseau", self.start_network_discovery, "#22c55e"),
-            ("📡 Test Ping", self.start_ping, "#f59e0b"),
+            (" Test Ping", self.start_ping, "#f59e0b"),
             ("🌐 Géolocalisation IP", self.start_ip_lookup, "#8b5cf6"),
             ("📋 Recherche WHOIS", self.start_whois_lookup, "#f97316"),
             ("📶 Analyse WiFi", self.start_wifi_scan, "#9333ea"),
@@ -858,142 +857,7 @@ class CyberScannerPRO:
         
         threading.Thread(target=ip_worker, daemon=True).start()
     
-    def start_network_discovery(self):
-        """Démarrer la découverte de réseau simple"""
-        if self.is_scanning:
-            messagebox.showwarning("Analyse en cours", "Une analyse est déjà en cours d'exécution")
-            return
-        
-        target = self.ip_entry.get().strip()
-        
-        # Si pas de cible spécifiée, utiliser une plage par défaut
-        if not target:
-            try:
-                import socket
-                hostname = socket.gethostname()
-                local_ip = socket.gethostbyname(hostname)
-                network_base = '.'.join(local_ip.split('.')[:-1])
-                target = f"{network_base}.1-50"  # Plage réduite pour être plus rapide
-                self.ip_entry.delete(0, tk.END)
-                self.ip_entry.insert(0, target)
-            except:
-                messagebox.showerror("Erreur", "Veuillez saisir une plage d'adresses IP (ex: 192.168.1.1-50)")
-                return
-        
-        self.is_scanning = True
-        self.stop_scan = False
-        if hasattr(self, 'stop_btn'):
-            self.stop_btn.config(state="normal")
-        
-        self.clear_output()
-        self.write_output(f"🔍 Découverte du réseau en cours...")
-        self.write_output(f"🎯 Plage analysée: {target}")
-        self.write_output("=" * 60)
-        
-        def discovery_worker():
-            try:
-                start_time = time.time()
-                alive_hosts = []
-                
-                if '-' in target:
-                    base_ip = '.'.join(target.split('.')[:-1])
-                    start_end = target.split('.')[-1].split('-')
-                    start_host = int(start_end[0])
-                    end_host = int(start_end[1])
-                    total = end_host - start_host + 1
-                    
-                    self.write_output(f"🔍 Analyse de {total} hôtes dans la plage {target}")
-                    self.write_output(f"⚡ Utilisation de la détection rapide multi-ports...")
-                    self.write_output("")
-                    
-                    def progress_update(current, total_hosts, found_host):
-                        if self.stop_scan:
-                            return
-                        
-                        if found_host:
-                            self.write_output(f"✅ {found_host} | ACTIF")
-                            alive_hosts.append(found_host)
-                        
-                        # Update progress bar
-                        progress = (current / total_hosts) * 100
-                        self.progress['value'] = progress
-                        
-                        # Show progress every 10 hosts or for smaller ranges
-                        if current % 10 == 0 or total_hosts <= 50:
-                            self.write_output(f"🔍 Progression: {current}/{total_hosts} ({progress:.1f}%)")
-                        
-                        self.root.update_idletasks()
-                    
-                    # Use fast network discovery
-                    for i in range(start_host, end_host + 1):
-                        # Check for stop request
-                        if self.stop_scan:
-                            self.write_output("🛑 Analyse interrompue par l'utilisateur")
-                            break
-                        
-                        test_ip = f"{base_ip}.{i}"
-                        
-                        # Use fast ping
-                        if fast_ping(test_ip, timeout=0.3):
-                            alive_hosts.append(test_ip)
-                            self.write_output(f"✅ {test_ip} | ACTIF")
-                        
-                        # Update progress
-                        current = i - start_host + 1
-                        progress = (current / total) * 100
-                        self.progress['value'] = progress
-                        
-                        # Force GUI update and check stop condition again
-                        self.root.update_idletasks()
-                        if self.stop_scan:
-                            self.write_output("🛑 Analyse interrompue par l'utilisateur")
-                            break
-                        
-                        # Afficher les mises à jour de progression
-                        if current % 20 == 0 or total <= 50:
-                            self.write_output(f"🔍 Progression: {current}/{total} hôtes analysés ({progress:.1f}%)")
-                    
-                    # Results
-                    duration = time.time() - start_time
-                    self.write_output("")
-                    self.write_output("=" * 60)
-                    self.write_output(f"📊 RÉSULTATS DE LA DÉCOUVERTE RÉSEAU")
-                    self.write_output(f"   Plage analysée: {target}")
-                    self.write_output(f"   Hôtes testés: {i - start_host + 1 if not self.stop_scan else total}")
-                    self.write_output(f"   Hôtes actifs trouvés: {len(alive_hosts)}")
-                    self.write_output(f"   Temps d'exécution: {duration:.2f} secondes")
-                    
-                    if alive_hosts:
-                        self.write_output(f"\n🎯 HÔTES ACTIFS DÉTECTÉS:")
-                        for host in alive_hosts:
-                            self.write_output(f"   ✅ {host}")
-                        
-                        # Sauvegarder dans la base de données
-                        self.db.save_scan(
-                            scan_type="Découverte Réseau",
-                            target=target,
-                            ports_scanned=len(alive_hosts),  # Utiliser les hôtes actifs comme "ports"
-                            ports_open=len(alive_hosts),
-                            open_ports_list=alive_hosts,
-                            duration=duration,
-                            status="interrompu" if self.stop_scan else "terminé"
-                        )
-                    else:
-                        self.write_output(f"   ❌ Aucun hôte actif détecté dans cette plage d'adresses")
-                        self.write_output(f"   💡 Vérifiez que vous êtes connecté au bon réseau")
-                
-            except Exception as e:
-                self.write_output(f"⚠️ Erreur: {e}")
-                print(f"Discovery error: {e}")
-            finally:
-                self.is_scanning = False
-                self.stop_scan = False
-                if hasattr(self, 'stop_btn'):
-                    self.stop_btn.config(state="disabled", text="⏹️ Arrêter Scan")
-                self.progress['value'] = 0
-        
-        threading.Thread(target=discovery_worker, daemon=True).start()
-    
+
     def stop_current_scan(self):
         """Arrêter l'analyse en cours"""
         if self.is_scanning:

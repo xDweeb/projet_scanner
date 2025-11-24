@@ -314,42 +314,7 @@ def fast_ping(host, timeout=1):
     except Exception:
         return False
 
-def network_discovery(network_range, progress_callback=None):
-    """
-    Découvrir les hôtes actifs dans une plage réseau simple.
-    network_range: chaîne comme "192.168.1.1-254"
-    progress_callback: fonction à appeler avec (current, total, found_host)
-    """
-    try:
-        if not network_range or '-' not in network_range:
-            return []
-        
-        # Analyser la plage réseau
-        base_ip = '.'.join(network_range.split('.')[:-1])
-        start_end = network_range.split('.')[-1].split('-')
-        start_host = int(start_end[0])
-        end_host = int(start_end[1])
-        
-        alive_hosts = []
-        total = end_host - start_host + 1
-        
-        for i in range(start_host, end_host + 1):
-            test_ip = f"{base_ip}.{i}"
-            current = i - start_host + 1
-            
-            if fast_ping(test_ip, timeout=0.5):
-                alive_hosts.append(test_ip)
-                if progress_callback:
-                    progress_callback(current, total, f"✅ Hôte trouvé: {test_ip}")
-            elif progress_callback:
-                progress_callback(current, total, None)
-        
-        return alive_hosts
-        
-    except Exception as e:
-        if progress_callback:
-            progress_callback(0, 1, f"❌ Erreur: {e}")
-        return []
+
 
 # Fonction simplifiée pour obtenir l'IP locale
 def get_local_ip():
